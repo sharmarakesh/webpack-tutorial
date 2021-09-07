@@ -1,0 +1,96 @@
+const path = require('path');
+const TerserPlugin = require('terser-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
+
+module.exports = {
+    entry: {
+        vendor: ['jquery'],
+        app: './src/index.js'
+    },
+    output: {
+        filename: '[name].[contenthash].js',
+        path: path.resolve(__dirname, './dist'),
+        publicPath: '' // here you can pass the public path of the folder like 'dist/'
+    },
+    mode: 'development', // to set the environment like production, development, testing
+    module: {
+        rules: [
+            {
+                test: /\.(ttf)$/, /// this rule will apply when .ttf file encounters
+                type:  'asset/resource'
+            },
+            {
+                test: /\.(png|jpg|jpeg)$/, /// this rule will apply when .png/.jpg/.jpeg file encounters
+                type:  'asset',
+                parser: {
+                    dataUrlCondition: {
+                        maxSize: 3 * 1024 // 3 kilobyte, Here you can conditionally change the size of the image to be included as inline or external
+                    }
+                }
+            },
+            {
+                test: /\.txt/, /// this rule will apply when .txt file encounters
+                type:  'asset/source'
+            },
+            {
+                test: /\.css$/,
+                use: [
+                    MiniCssExtractPlugin.loader, 'css-loader' // if you want to extract the css you need to use MiniCssExtractPlugin loader instead of 'style-loader'
+                ]
+            },
+            {
+                test: /\.scss$/,
+                use: [
+                    MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'
+                ]
+            },
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        presets: [ '@babel/env' ],
+                        plugins: [ '@babel/plugin-proposal-class-properties' ]
+                    }
+                }
+            },
+            {
+                test: /\.hbs$/,
+                use: [
+                    'handlebars-loader'
+                ]
+            }
+        ]
+    },
+    plugins: [
+        new TerserPlugin(),
+        new MiniCssExtractPlugin({
+            filename: 'styles.[contenthash].css'
+        }),
+        new CleanWebpackPlugin({
+            cleanOnceBeforeBuildPatterns: [
+                "**/*",
+                path.join(process.cwd(), 'build/**/*') // to explicit clean other folder outside of targeted directory
+            ]
+        }),
+        new HtmlWebpackPlugin({
+            title: "Webpack Handlebar Exaxmple",
+            template: 'src/index.hbs',
+            description: 'Some Description'
+            // filename: 'subfolder/custom_filename.html', // here you can pass the filename of the output html and subfolder name too
+            // meta: {
+            //     description: 'Some Description' // will include the description meta tag
+            // }
+        }),
+        new webpack.ProvidePlugin({
+            'window.jQuery': 'jquery',
+            'window.$': 'jquery',
+            'jQuery': 'jquery',
+            '$': 'jquery'
+        })
+    ]
+}
